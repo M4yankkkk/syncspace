@@ -1,8 +1,8 @@
 import { useSessionStore } from './store/useSessionStore';
 import SharedTimer from './components/SharedTimer';
 import TaskBoard from './components/TaskBoard';
-import CommunicationBar from './components/CommunicationBar';
 import BrainDump from './components/BrainDump';
+import EphemeralChat from './components/EphemeralChat';
 import DebriefModal from './components/DebriefModal';
 import LoginScreen from './components/LoginScreen';
 import FloatingVideo from './components/FloatingVideo';
@@ -12,13 +12,13 @@ import { useWebRTC } from './hooks/useWebRTC';
 import { Routes, Route } from 'react-router-dom';
 
 function App() {
-  const { connectWs, ws, roomId, token, username, partnerPresence } = useSessionStore();
+  const { connectWs, ws, roomId, token, username, partnerPresence, setPttActive, isPttActive } = useSessionStore();
   const [isDebriefOpen, setIsDebriefOpen] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
   const [sessionDuration, setSessionDuration] = useState(0);
   
   // Lift WebRTC state to the top level so it is only instantiated ONCE
-  const { micError, localStream, remoteStream, isVideoOn, toggleVideo } = useWebRTC();
+  const { localStream, remoteStream, isVideoOn, toggleVideo } = useWebRTC();
 
   useEffect(() => {
     if (roomId && token) {
@@ -56,6 +56,29 @@ function App() {
       return () => clearTimeout(t);
     }
   }, [partnerPresence, roomId]);
+
+  // Global spacebar listener for PTT
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && !isPttActive) {
+        if ((e.target as HTMLElement).tagName !== 'INPUT' && (e.target as HTMLElement).tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          setPttActive(true);
+        }
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        setPttActive(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [isPttActive, setPttActive]);
 
   if (!roomId || !token || !username) {
     return (
@@ -108,11 +131,6 @@ function App() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Communication Bar relocated to Header */}
-          <div className="scale-90 origin-right">
-            <CommunicationBar micError={micError} />
-          </div>
-          
           <button 
             onClick={() => setIsDebriefOpen(true)}
             className="px-4 py-1.5 bg-danger/10 hover:bg-danger/20 text-danger border border-danger/50 rounded-full text-sm font-bold transition-colors"
@@ -123,17 +141,22 @@ function App() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-6 flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto w-full">
+      <main className="flex-1 p-6 flex flex-col lg:flex-row gap-6 max-w-[1600px] mx-auto w-full">
         {/* Left Column (Timer & Tools) */}
-        <div className="w-full lg:w-80 flex flex-col gap-6">
+        <div className="w-full lg:w-72 flex flex-col gap-6">
           <SharedTimer />
           <BrainDump />
         </div>
 
-        {/* Right Column (Split Desk) */}
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Center Column (Split Desk) */}
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 min-w-0">
           <TaskBoard isPartner={false} />
           <TaskBoard isPartner={true} />
+        </div>
+
+        {/* Right Column (Chat Bento) */}
+        <div className="w-full lg:w-80 flex flex-col gap-6">
+          <EphemeralChat />
         </div>
       </main>
 

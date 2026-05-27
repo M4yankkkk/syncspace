@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSessionStore } from '../store/useSessionStore';
-import { Send, X } from 'lucide-react';
+import { Send } from 'lucide-react';
 
 interface ChatMessage {
   id: string;
@@ -9,7 +9,7 @@ interface ChatMessage {
   timestamp: number;
 }
 
-export default function EphemeralChat({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
+export default function EphemeralChat() {
   const { ws } = useSessionStore();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -30,10 +30,8 @@ export default function EphemeralChat({ isOpen, onClose }: { isOpen: boolean, on
   }, [ws]);
 
   useEffect(() => {
-    if (isOpen) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages, isOpen]);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,18 +49,13 @@ export default function EphemeralChat({ isOpen, onClose }: { isOpen: boolean, on
     setInput('');
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed bottom-24 right-6 w-80 bg-surface border border-slate-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col z-50 animate-in slide-in-from-bottom-5">
+    <div className="flex-1 bg-surface border border-slate-700 rounded-2xl shadow-sm overflow-hidden flex flex-col">
       <div className="p-4 border-b border-slate-700/50 flex justify-between items-center bg-slate-800/50">
-        <h3 className="font-bold text-slate-200">Ephemeral Chat</h3>
-        <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
-          <X size={20} />
-        </button>
+        <h3 className="font-bold text-slate-200">Chat</h3>
       </div>
       
-      <div className="h-64 overflow-y-auto p-4 flex flex-col gap-3">
+      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 min-h-[300px]">
         {messages.map(msg => (
           <div key={msg.id} className={`flex flex-col ${msg.sender === 'me' ? 'items-end' : 'items-start'}`}>
             <div className={`px-4 py-2 rounded-2xl text-sm ${msg.sender === 'me' ? 'bg-primary text-white rounded-br-sm' : 'bg-slate-700 text-slate-200 rounded-bl-sm'}`}>
@@ -85,7 +78,6 @@ export default function EphemeralChat({ isOpen, onClose }: { isOpen: boolean, on
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type a message..."
-            autoFocus
             className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2 pl-3 pr-10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-primary/50 transition-colors"
           />
           <button 

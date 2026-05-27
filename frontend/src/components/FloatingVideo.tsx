@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Video, VideoOff } from 'lucide-react';
+import { Video, VideoOff, Mic } from 'lucide-react';
+import { useSessionStore } from '../store/useSessionStore';
 
 interface FloatingVideoProps {
   localStream: MediaStream | null;
@@ -9,6 +10,7 @@ interface FloatingVideoProps {
 }
 
 export default function FloatingVideo({ localStream, remoteStream, isVideoOn, toggleVideo }: FloatingVideoProps) {
+  const { isPttActive, setPttActive } = useSessionStore();
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
 
@@ -98,6 +100,16 @@ export default function FloatingVideo({ localStream, remoteStream, isVideoOn, to
           className="absolute top-4 right-4 p-2 rounded-full bg-slate-800/80 text-white hover:bg-slate-700 backdrop-blur-sm transition-colors border border-slate-600 shadow-md"
         >
           {isVideoOn ? <Video size={18} /> : <VideoOff size={18} />}
+        </button>
+
+        {/* Mic / PTT Indicator */}
+        <button
+          onMouseDown={(e) => { e.stopPropagation(); setPttActive(true); }}
+          onMouseUp={(e) => { e.stopPropagation(); setPttActive(false); }}
+          onMouseLeave={(e) => { e.stopPropagation(); setPttActive(false); }}
+          className={`absolute top-4 right-14 p-2 rounded-full backdrop-blur-sm transition-colors border border-slate-600 shadow-md flex items-center gap-2 ${isPttActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-700'}`}
+        >
+          <Mic size={18} className={isPttActive ? 'animate-pulse' : ''} />
         </button>
       </div>
 
