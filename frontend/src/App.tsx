@@ -7,10 +7,14 @@ import DebriefModal from './components/DebriefModal';
 import LoginScreen from './components/LoginScreen';
 import FloatingVideo from './components/FloatingVideo';
 import { useState, useEffect } from 'react';
+import { useWebRTC } from './hooks/useWebRTC';
 
 function App() {
   const { connectWs, ws, roomId, token, username } = useSessionStore();
   const [isDebriefOpen, setIsDebriefOpen] = useState(false);
+  
+  // Lift WebRTC state to the top level so it is only instantiated ONCE
+  const { micError, localStream, remoteStream, isVideoOn, toggleVideo } = useWebRTC();
 
   useEffect(() => {
     if (roomId && token) {
@@ -74,8 +78,13 @@ function App() {
       </main>
 
       {/* Video & Communication */}
-      <FloatingVideo />
-      <CommunicationBar />
+      <FloatingVideo 
+        localStream={localStream} 
+        remoteStream={remoteStream} 
+        isVideoOn={isVideoOn} 
+        toggleVideo={toggleVideo} 
+      />
+      <CommunicationBar micError={micError} />
       <DebriefModal isOpen={isDebriefOpen} onClose={() => setIsDebriefOpen(false)} />
     </div>
   );

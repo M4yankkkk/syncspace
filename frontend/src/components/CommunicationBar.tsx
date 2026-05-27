@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useSessionStore } from '../store/useSessionStore';
 import { Mic, MessageSquare } from 'lucide-react';
-import { useWebRTC } from '../hooks/useWebRTC';
 import EphemeralChat from './EphemeralChat';
 
-export default function CommunicationBar() {
+interface CommunicationBarProps {
+  micError: string | null;
+}
+
+export default function CommunicationBar({ micError }: CommunicationBarProps) {
   const { setPttActive, isPttActive } = useSessionStore();
-  const { micError } = useWebRTC();
   const [isChatOpen, setIsChatOpen] = useState(false);
 
   useEffect(() => {

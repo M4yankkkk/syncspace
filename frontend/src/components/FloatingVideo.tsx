@@ -1,9 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Video, VideoOff } from 'lucide-react';
-import { useWebRTC } from '../hooks/useWebRTC';
 
-export default function FloatingVideo() {
-  const { localStream, remoteStream, isVideoOn, toggleVideo } = useWebRTC();
+interface FloatingVideoProps {
+  localStream: MediaStream | null;
+  remoteStream: MediaStream | null;
+  isVideoOn: boolean;
+  toggleVideo: () => void;
+}
+
+export default function FloatingVideo({ localStream, remoteStream, isVideoOn, toggleVideo }: FloatingVideoProps) {
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
 
