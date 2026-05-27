@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSessionStore } from '../store/useSessionStore';
 
-export default function DebriefModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
+export default function DebriefModal({ isOpen }: { isOpen: boolean }) {
   const { myTasks } = useSessionStore();
   const [rating, setRating] = useState<'green' | 'yellow' | 'red' | null>(null);
   const [notes, setNotes] = useState('');

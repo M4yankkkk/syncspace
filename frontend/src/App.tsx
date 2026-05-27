@@ -144,7 +144,7 @@ function App() {
         isVideoOn={isVideoOn} 
         toggleVideo={toggleVideo} 
       />
-      <DebriefModal isOpen={isDebriefOpen} onClose={() => setIsDebriefOpen(false)} />
+      <DebriefModal isOpen={isDebriefOpen} />
     </div>
   );
 }
