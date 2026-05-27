@@ -34,7 +34,7 @@ export function useWebRTC() {
       try {
         makingOfferRef.current = true;
         await pc.setLocalDescription();
-        ws.send(JSON.stringify({ type: 'WEBRTC', data: { type: 'offer', offer: pc.localDescription } }));
+        ws.send(JSON.stringify({ type: 'WEBRTC', data: { type: 'offer', offer: pc.localDescription, sender: useSessionStore.getState().username } }));
       } catch (err) {
         console.error(err);
       } finally {
@@ -44,16 +44,33 @@ export function useWebRTC() {
 
     const handleSignaling = async (event: MessageEvent) => {
       const msg = JSON.parse(event.data);
-      if (msg.type === 'WEBRTC' && pcRef.current) {
-        const payload = msg.data;
-        const pc = pcRef.current;
-        try {
+      const pc = pcRef.current;
+      if (!pc) return;
+
+      try {
+        if (msg.type === 'HELLO') {
+          // A new peer joined. Force a renegotiation if we already have tracks or want to connect.
+          makingOfferRef.current = true;
+          await pc.setLocalDescription();
+          ws.send(JSON.stringify({ type: 'WEBRTC', data: { type: 'offer', offer: pc.localDescription, sender: useSessionStore.getState().username } }));
+          makingOfferRef.current = false;
+        } else if (msg.type === 'WEBRTC') {
+          const payload = msg.data;
+          
           if (payload.type === 'offer') {
+            const myUsername = useSessionStore.getState().username || '';
+            const senderUsername = payload.sender || '';
+            // Deterministic polite peer based on username comparison
+            const isPolite = myUsername < senderUsername; 
+            
             const offerCollision = makingOfferRef.current || pc.signalingState !== 'stable';
-            // We'll act as the 'polite' peer if we just joined (simplification)
-            ignoreOfferRef.current = !pc.localDescription && offerCollision;
+            
+            ignoreOfferRef.current = !isPolite && offerCollision;
             if (ignoreOfferRef.current) return;
 
+            // If we're polite and there's a collision, we must rollback our offer first (if state is have-local-offer)
+            // Note: setRemoteDescription with an offer implicitly rolls back in modern WebRTC, 
+            // but we ensure we await it properly.
             await pc.setRemoteDescription(new RTCSessionDescription(payload.offer));
             await pc.setLocalDescription();
             ws.send(JSON.stringify({ type: 'WEBRTC', data: { type: 'answer', answer: pc.localDescription } }));
@@ -66,9 +83,9 @@ export function useWebRTC() {
               if (!ignoreOfferRef.current) console.error(err);
             }
           }
-        } catch (err) {
-          console.error(err);
         }
+      } catch (err) {
+        console.error(err);
       }
     };
 
