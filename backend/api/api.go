@@ -26,6 +26,13 @@ func SetupRouter() *gin.Engine {
 		})
 	})
 
+	r.GET("/api/ping", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "pong",
+			"status": "awake",
+		})
+	})
+
 	// Add more routes like signup, login, historical sessions here
 	
 	return r

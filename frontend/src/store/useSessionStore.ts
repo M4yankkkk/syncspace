@@ -54,7 +54,8 @@ export const useSessionStore = create<SessionState>()((set, get) => ({
   connectWs: () => {
     const { ws, roomId, token } = get();
     if (ws || !roomId || !token) return;
-    const wsUrl = `ws://localhost:8081/ws?room=${encodeURIComponent(roomId)}&token=${encodeURIComponent(token)}`;
+    const baseUrl = import.meta.env.VITE_WS_URL || "ws://localhost:8081/ws";
+    const wsUrl = `${baseUrl}?room=${encodeURIComponent(roomId)}&token=${encodeURIComponent(token)}`;
     const newWs = new WebSocket(wsUrl);
     
     newWs.onmessage = (event) => {
