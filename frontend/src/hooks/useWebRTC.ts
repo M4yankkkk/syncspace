@@ -99,12 +99,14 @@ export function useWebRTC() {
         stream.getTracks().forEach(track => {
           if (pcRef.current) pcRef.current.addTrack(track, stream);
         });
-        // Send a hello message to trigger negotiation from the other side if they are there
-        ws.send(JSON.stringify({ type: 'HELLO' }));
       })
       .catch(err => {
         console.error("Media access denied", err);
         setMicError("Media access denied.");
+      })
+      .finally(() => {
+        // Send a hello message to trigger negotiation from the other side if they are there
+        ws.send(JSON.stringify({ type: 'HELLO' }));
       });
 
     return () => {

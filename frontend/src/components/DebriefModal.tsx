@@ -14,7 +14,9 @@ export default function DebriefModal({ isOpen, onClose }: { isOpen: boolean, onC
     
     // In a real implementation, send this to the REST API:
     console.log("Submitting Debrief:", { rating, notes, tasksCompleted: myTasks.filter(t => t.completed).length });
-    onClose();
+    
+    // End session
+    window.location.href = '/';
   };
 
   const completedCount = myTasks.filter(t => t.completed).length;
