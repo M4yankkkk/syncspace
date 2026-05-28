@@ -253,24 +253,45 @@ export function useWebRTC() {
     const currentVideoTrack = stream.getVideoTracks()[0];
 
     if (currentVideoTrack) {
-      // Turn off
+      // Turn off — stop the track and null out the sender
+      console.log('[WebRTC] Turning video OFF');
       currentVideoTrack.stop();
       stream.removeTrack(currentVideoTrack);
-      setIsVideoOn(false);
 
       const senders = pcRef.current?.getSenders() || [];
-      const sender = senders.find(s => s.track?.kind === 'video');
-      if (sender) pcRef.current?.removeTrack(sender);
+      const videoSender = senders.find(s => s.track?.kind === 'video');
+      if (videoSender) {
+        videoSender.replaceTrack(null);
+      }
+      setIsVideoOn(false);
+      // Force re-render by creating a new stream reference with the remaining tracks
+      const updatedStream = new MediaStream(stream.getTracks());
+      localStreamRef.current = updatedStream;
+      setLocalStream(updatedStream);
     } else {
-      // Turn on
+      // Turn on — get a new video track
       try {
+        console.log('[WebRTC] Turning video ON');
         const videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
         const videoTrack = videoStream.getVideoTracks()[0];
         stream.addTrack(videoTrack);
-        setIsVideoOn(true);
-        if (pcRef.current) {
+
+        // Check if we already have a video sender we can reuse
+        const senders = pcRef.current?.getSenders() || [];
+        const videoSender = senders.find(s => s.track === null || s.track?.kind === 'video');
+        if (videoSender) {
+          await videoSender.replaceTrack(videoTrack);
+          console.log('[WebRTC] Replaced existing video sender track');
+        } else if (pcRef.current) {
           pcRef.current.addTrack(videoTrack, stream);
+          console.log('[WebRTC] Added new video sender');
         }
+
+        setIsVideoOn(true);
+        // Force re-render by creating a new stream reference with all tracks
+        const updatedStream = new MediaStream(stream.getTracks());
+        localStreamRef.current = updatedStream;
+        setLocalStream(updatedStream);
       } catch (err) {
         console.error('[WebRTC] Camera access denied:', err);
       }
