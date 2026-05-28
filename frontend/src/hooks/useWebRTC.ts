@@ -91,29 +91,48 @@ export function useWebRTC() {
 
     ws.addEventListener('message', handleSignaling);
 
-    // Initial media setup
-    navigator.mediaDevices.getUserMedia({ audio: true, video: isVideoOn })
-      .then(stream => {
+    const initMedia = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: isVideoOn });
         setLocalStream(stream);
         stream.getAudioTracks().forEach(track => { track.enabled = false; });
         stream.getTracks().forEach(track => {
           if (pcRef.current) pcRef.current.addTrack(track, stream);
         });
-      })
-      .catch(err => {
+        setMicError(null);
+      } catch (err) {
         console.error("Media access denied", err);
-        setMicError("Media access denied.");
-      })
-      .finally(() => {
-        // Send a hello message to trigger negotiation from the other side if they are there
+        setMicError("Media access denied. Close any overlays and click Retry.");
+      } finally {
         ws.send(JSON.stringify({ type: 'HELLO' }));
-      });
+      }
+    };
+
+    initMedia();
 
     return () => {
       ws.removeEventListener('message', handleSignaling);
       pcRef.current?.close();
     };
   }, [ws]); // Only run once when ws connects
+
+  const retryMedia = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: isVideoOn });
+      setLocalStream(stream);
+      stream.getAudioTracks().forEach(track => { track.enabled = useSessionStore.getState().isPttActive; });
+      stream.getTracks().forEach(track => {
+        const senders = pcRef.current?.getSenders() || [];
+        if (!senders.find(s => s.track?.kind === track.kind)) {
+          pcRef.current?.addTrack(track, stream);
+        }
+      });
+      setMicError(null);
+    } catch (err) {
+      console.error("Media access denied", err);
+      setMicError("Media access denied. Close any overlays and click Retry.");
+    }
+  }, [isVideoOn]);
 
   // Handle Video toggle
   const toggleVideo = useCallback(async () => {
@@ -154,5 +173,5 @@ export function useWebRTC() {
     }
   }, [isPttActive, localStream]);
 
-  return { micError, localStream, remoteStream, isVideoOn, toggleVideo };
+  return { micError, localStream, remoteStream, isVideoOn, toggleVideo, retryMedia };
 }

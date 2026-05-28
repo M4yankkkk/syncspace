@@ -7,9 +7,11 @@ interface FloatingVideoProps {
   remoteStream: MediaStream | null;
   isVideoOn: boolean;
   toggleVideo: () => void;
+  micError?: string | null;
+  retryMedia?: () => void;
 }
 
-export default function FloatingVideo({ localStream, remoteStream, isVideoOn, toggleVideo }: FloatingVideoProps) {
+export default function FloatingVideo({ localStream, remoteStream, isVideoOn, toggleVideo, micError, retryMedia }: FloatingVideoProps) {
   const { isPttActive, setPttActive } = useSessionStore();
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -70,6 +72,18 @@ export default function FloatingVideo({ localStream, remoteStream, isVideoOn, to
       onPointerUp={handlePointerUp}
     >
       <div className="flex-1 relative bg-black w-full h-full">
+        {micError && retryMedia && (
+          <div className="absolute inset-0 bg-slate-900/90 flex flex-col items-center justify-center p-4 text-center z-20 backdrop-blur-sm">
+            <p className="text-danger text-sm font-semibold mb-3">{micError}</p>
+            <button 
+              onClick={(e) => { e.stopPropagation(); retryMedia(); }}
+              className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-full text-sm font-bold transition-colors shadow-lg"
+            >
+              Retry Permissions
+            </button>
+          </div>
+        )}
+        
         {remoteStream ? (
           <video 
             ref={remoteVideoRef} 

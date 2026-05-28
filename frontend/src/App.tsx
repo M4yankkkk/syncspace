@@ -18,7 +18,7 @@ function App() {
   const [sessionDuration, setSessionDuration] = useState(0);
   
   // Lift WebRTC state to the top level so it is only instantiated ONCE
-  const { localStream, remoteStream, isVideoOn, toggleVideo } = useWebRTC();
+  const { micError, localStream, remoteStream, isVideoOn, toggleVideo, retryMedia } = useWebRTC();
 
   useEffect(() => {
     if (roomId && token) {
@@ -166,6 +166,8 @@ function App() {
         remoteStream={remoteStream} 
         isVideoOn={isVideoOn} 
         toggleVideo={toggleVideo} 
+        micError={micError}
+        retryMedia={retryMedia}
       />
       <DebriefModal isOpen={isDebriefOpen} />
     </div>
